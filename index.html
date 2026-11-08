@@ -103,6 +103,8 @@ button:disabled{opacity:.45}
   <div class="history" id="roundSummary">各ホールのスコアはここに表示されます。</div>
   <button class="secondary" id="exportRound">ラウンド記録をJSONで保存</button>
   <button class="danger" id="clearScores">保存したスコアを全クリア</button>
+<button class="danger" id="fullReset" style="margin-top:10px;background:#8b1e1e">試験データを完全初期化（ショットGPS含む）</button>
+<div class="status" id="fullResetStatus"></div>
   <div class="status" id="clearStatus"></div>
 </section>
 <section class="card">
@@ -410,7 +412,24 @@ function persist(){localStorage.setItem("manaGolfShots",JSON.stringify(shotsByHo
 function fillReviewHoles(){const sel=$("reviewHole");sel.innerHTML="";Object.keys(data.routes?.[$("reviewCourse").value]||{}).forEach(n=>sel.add(new Option(n+"番ホール",n)));}
 $("reviewCourse").onchange=fillReviewHoles;fillReviewHoles();
 $("clearScores").onclick=()=>{if(!confirm("保存した全ホールのスコアを削除します。GPSショット地点は残ります。よろしいですか？"))return;scoresByHole={};persist();renderRound();loadScoreInputs();$("clearStatus").textContent="全ホールのスコアを削除しました。GPS地点の記録は残しています。";};
-let reviewMap=null,reviewLayer=null,reviewTileLayer=null;
+$("fullReset").onclick=()=>{
+  if(!confirm("【確認1/2】全ホールのショットGPS地点・ペナルティ記録・スコア・グリーン到達記録をすべて削除します。元に戻せません。よろしいですか？"))return;
+  const phrase=prompt("【確認2/2】完全初期化するには「初期化」と入力してください。");
+  if(phrase!=="初期化"){ $("fullResetStatus").textContent="キャンセルしました。データは削除されていません。"; return; }
+  try{
+    localStorage.removeItem("manaGolfShots");
+    localStorage.removeItem("manaGolfScores");
+    localStorage.removeItem("manaGolfGreenReached");
+    shotsByHole={}; scoresByHole={}; greenReachedByHole={};
+    renderShotList(); renderRound(); loadScoreInputs();
+    $("shotStatus").textContent="ショットGPS記録はありません。";
+    $("scoreStatus").textContent="まだスコアは保存されていません。";
+    $("fullResetStatus").textContent="完全初期化しました。スコア・ショットGPS・ペナルティ・到達記録を削除しました。";
+  }catch(e){
+    $("fullResetStatus").textContent="初期化に失敗しました。Safariのサイトデータ設定をご確認ください。";
+  }
+};
+ let reviewMap=null,reviewLayer=null,reviewTileLayer=null;
 function loadLeaflet(){return new Promise((resolve,reject)=>{if(window.L){resolve();return;}if(!document.getElementById("leafletCss")){const l=document.createElement("link");l.id="leafletCss";l.rel="stylesheet";l.href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";document.head.appendChild(l);}const sc=document.createElement("script");sc.src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";sc.onload=resolve;sc.onerror=()=>reject(new Error("地図ライブラリを読み込めません。通信環境を確認してください。"));document.head.appendChild(sc);});}
 $("showReview").onclick=async()=>{
  const c=$("reviewCourse").value,n=$("reviewHole").value,key=c+"-"+n,arr=shotsByHole[key]||[],box=$("reviewMap"),status=$("reviewStatus");
