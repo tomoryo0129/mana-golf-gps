@@ -38,6 +38,9 @@ button.warn{background:#a65b27}
 
 .quick-card{position:sticky;top:0;z-index:50;box-shadow:0 5px 18px #173c2820;border-color:#b8cfbd}
 .quick-card .distances{margin:8px 0}
+.reference-count{display:flex;align-items:center;justify-content:space-between;background:#123b2a;color:#fff;border-radius:13px;padding:9px 14px;margin:8px 0}
+.reference-count strong{font-size:25px;line-height:1.1}
+.reference-count small{font-size:11px;opacity:.85}
 .quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .quick-actions button{padding:14px 8px;font-size:14px}
 .penalty-row{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;margin-top:8px}
@@ -60,6 +63,7 @@ button:disabled{opacity:.45}
  <div class="dist mid"><div class="name">中央</div><div class="num" id="center">—</div><div class="unit">ヤード</div></div>
  <div class="dist"><div class="name">奥</div><div class="num" id="back">—</div><div class="unit">ヤード</div></div>
 </div>
+<div class="reference-count"><span>このホールの参考打数<small style="display:block">ショット記録＋事前に選択した罰打</small></span><strong id="referenceStrokes">0打</strong></div>
 <div class="penalty-row"><label for="penaltyBefore">打つ前の罰打</label><select id="penaltyBefore"><option value="0">罰打なし</option><option value="1">1打罰（OB等）</option><option value="2">2打罰（ハザード等）</option></select></div>
 <div class="quick-actions" style="margin-top:9px"><button id="recordShot">ここから打った</button><button id="greenReached" class="warn">グリーン／カラー到達</button></div>
 <div class="quick-actions" style="margin-top:7px"><button id="locate" class="secondary">現在地を取得</button><button id="tracking" class="secondary">GPS追跡を開始</button></div>
@@ -482,6 +486,8 @@ $("greenReached").onclick=()=>{
 };
 function renderShotList(){
  const key=holeKey(),arr=shotsByHole[key]||[];
+ const referenceStrokes=arr.reduce((sum,s)=>sum+1+Number(s.penaltyBefore||0),0);
+ $("referenceStrokes").textContent=referenceStrokes+"打";
  const reached=!!greenReachedByHole[key];
  $("shotList").innerHTML=arr.length?arr.map(s=>`<li><span><b>${s.shot}地点目</b>${s.penaltyBefore?` <span class="pill">事前${s.penaltyBefore}打罰</span>`:""}<br><span class="note">${s.lat.toFixed(5)}, ${s.lon.toFixed(5)} · 精度 ${Math.round(s.accuracy)}m</span></span><span class="pill">${s.toGreenCenter===null?"—":s.toGreenCenter+" yd to center"}</span></li>`).join(""):"<li>このホールのショット地点はまだありません。</li>";
  $("recordShot").disabled=reached;$("recordShot").style.opacity=reached?".55":"1";
